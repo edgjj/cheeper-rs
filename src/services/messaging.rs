@@ -17,7 +17,9 @@ async fn index_messages(state: web::Data<ServerState>, path: web::Path<u64>, que
     let user_id = path.into_inner();
     let date_info = query.into_inner();
 
-    // custom user responder
+    // do state.client interaction
+
+    // custom responder
     HttpResponse::Ok()
 }
 
@@ -28,5 +30,8 @@ struct SendMessageRequest{
 
 #[post("/messages/send")]
 async fn send_message(state: web::Json<SendMessageRequest>) -> impl Responder{
+    // do state.client interaction
+    
+    // custom responder
     HttpResponse::Ok()
 }
