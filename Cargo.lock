@@ -486,6 +486,7 @@ dependencies = [
  "actix-web",
  "elasticsearch",
  "serde",
+ "serde_json",
  "uuid",
 ]
 
