@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
-pub struct User{
+pub struct User {
     pub id: Uuid,
     pub username: String,
     pub created_at: SystemTime,

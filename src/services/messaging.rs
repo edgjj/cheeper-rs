@@ -1,4 +1,4 @@
-use actix_web::{web, get, post, Responder, HttpResponse, rt::System};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use std::time::SystemTime;
 
 use serde::Deserialize;
@@ -7,13 +7,17 @@ use super::ServerState;
 use crate::dto::Message;
 
 #[derive(Deserialize)]
-struct MessagesDateSpan{
+struct MessagesDateSpan {
     date_start: Option<SystemTime>,
-    date_end: Option<SystemTime>
+    date_end: Option<SystemTime>,
 }
 
 #[get("/messages/get/{user_id}")]
-async fn index_messages(state: web::Data<ServerState>, path: web::Path<u64>, query: web::Query<MessagesDateSpan>) -> impl Responder{
+async fn index_messages(
+    state: web::Data<ServerState>,
+    path: web::Path<u64>,
+    query: web::Query<MessagesDateSpan>,
+) -> impl Responder {
     let user_id = path.into_inner();
     let date_info = query.into_inner();
 
@@ -24,14 +28,17 @@ async fn index_messages(state: web::Data<ServerState>, path: web::Path<u64>, que
 }
 
 #[derive(Deserialize)]
-struct SendMessageRequest{
+struct SendMessageRequest {
     text: String,
 }
 
 #[post("/messages/send")]
-async fn send_message(state: web::Json<SendMessageRequest>) -> impl Responder{
+async fn send_message(
+    state: web::Data<ServerState>,
+    req: web::Json<SendMessageRequest>,
+) -> impl Responder {
     // do state.client interaction
-    
-    // custom responder
+
+    // custom responder (return dto::Message as inserted in ES)
     HttpResponse::Ok()
 }

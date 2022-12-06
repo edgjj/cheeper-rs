@@ -1,4 +1,4 @@
-mod user;
 mod msg;
+mod user;
 
-pub use self::{user::User, msg::Message};
+pub use self::{msg::Message, user::User};
