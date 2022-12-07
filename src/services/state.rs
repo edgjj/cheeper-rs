@@ -1,14 +1,13 @@
-use actix_web::dev::Server;
-use elasticsearch::{http::transport::Transport, Elasticsearch};
+use opensearch::{http::transport::Transport, OpenSearch};
 
 pub struct ServerState {
-    pub client: Elasticsearch,
+    pub client: OpenSearch,
 }
 
 impl ServerState {
     pub fn new(url: &str) -> ServerState {
         let transport = Transport::single_node(url).unwrap();
-        let client = Elasticsearch::new(transport);
+        let client = OpenSearch::new(transport);
 
         ServerState { client: client }
     }

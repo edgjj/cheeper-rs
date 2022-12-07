@@ -13,7 +13,7 @@ struct MessagesDateSpan {
 }
 
 #[get("/messages/get/{user_id}")]
-async fn index_messages(
+pub async fn index_messages(
     state: web::Data<ServerState>,
     path: web::Path<u64>,
     query: web::Query<MessagesDateSpan>,
@@ -33,7 +33,7 @@ struct SendMessageRequest {
 }
 
 #[post("/messages/send")]
-async fn send_message(
+pub async fn send_message(
     state: web::Data<ServerState>,
     req: web::Json<SendMessageRequest>,
 ) -> impl Responder {

@@ -1,5 +1,6 @@
-mod messaging;
 mod state;
-mod users;
+
+pub mod messaging;
+pub mod users;
 
 pub use state::ServerState;
