@@ -1,10 +1,8 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
-use std::time::SystemTime;
 
 use serde::Deserialize;
 
 use super::ServerState;
-use crate::dto::Message;
 
 #[derive(Deserialize)]
 struct MakeFriendsRequest {
