@@ -5,7 +5,7 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize)]
 pub struct Message {
     pub id: Uuid,
-    pub author: Uuid,
+    pub author_id: Uuid,
     pub created_at: SystemTime,
     pub text: String,
 }

@@ -1,2 +1,2 @@
 [alias]
-runl = "run -- -e http://192.168.0.141:9200"
+runl = "run -- -e http://192.168.0.141:9200 -u admin -p admin"

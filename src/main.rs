@@ -1,12 +1,17 @@
 use actix_web::{web, App, HttpServer};
-// use es_cheaper::dto::*;
 use clap::Parser;
-use es_cheaper::services::*;
+use es_cheaper::{migrations, services::*};
 
 #[derive(Parser)]
 struct Args {
     #[arg(short = 'e', long = "engine")]
     engine_url: String,
+
+    #[arg(short = 'u', long = "uname")]
+    username: String,
+
+    #[arg(short = 'p', long = "password")]
+    password: String,
 }
 
 #[actix_web::main]
@@ -15,10 +20,14 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let args = Args::parse();
+    let server_state = ServerState::new(args.engine_url, args.username, args.password);
+
+    // create indices
+    migrations::create_indices(&server_state.client).await;
 
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(ServerState::new(args.engine_url.as_str())))
+            .app_data(web::Data::new(server_state.clone()))
             .service(messaging::index_messages)
             .service(messaging::send_message)
     })

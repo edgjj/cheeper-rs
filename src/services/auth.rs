@@ -18,6 +18,8 @@ async fn register_user(
     state: web::Data<ServerState>,
     req: web::Json<LoginRegisterRequest>,
 ) -> impl Responder {
+    let client = &state.client;
+
     // set cookie ?
     HttpResponse::Ok()
 }
@@ -28,9 +30,10 @@ async fn login_user(
     req: web::Json<LoginRegisterRequest>,
     plain_req: HttpRequest,
 ) -> impl Responder {
-    
-    let login_identity = Identity::login(&plain_req.extensions(), req.username.clone());
-    match (login_identity) {
+    let client = &state.client;
+
+    let login_identity = Identity::login(&plain_req.extensions(), req.into_inner().username);
+    match login_identity {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(error) => HttpResponse::InternalServerError()
             .json(format!("Internal error: {}", error.to_string())), //HttpResponse::from_error(error),
