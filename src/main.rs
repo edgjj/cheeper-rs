@@ -1,4 +1,12 @@
-use actix_web::{web, App, HttpServer};
+use actix_web::{
+    web,
+    App, HttpServer,
+    cookie::Key
+};
+
+use actix_identity::IdentityMiddleware;
+use actix_session::{storage::{CookieSessionStore}, SessionMiddleware};
+
 use clap::Parser;
 use es_cheaper::{migrations, services::*};
 
@@ -25,9 +33,20 @@ async fn main() -> std::io::Result<()> {
     // create indices
     migrations::create_indices(&server_state.client).await;
 
+    let secret_key = Key::generate();
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(server_state.clone()))
+            .wrap(IdentityMiddleware::default())
+            .wrap(
+            SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                .cookie_name("es-cheeper".to_owned())
+                .cookie_secure(false)
+                .build(),
+            )
+            .service(auth::register_user)
+            .service(auth::login_user)
+            .service(auth::logout_user)
             .service(messaging::index_messages)
             .service(messaging::send_message)
     })

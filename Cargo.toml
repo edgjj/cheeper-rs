@@ -14,6 +14,10 @@ env_logger = "0.10.0"
 clap = { version = "4.0.29", features = ["derive"] }
 actix-identity = "0.5.2"
 argon2 = "0.4.1"
+serde-partial = "0.3.1"
+log = "0.4.17"
+chrono = "0.4.23"
+actix-session = { version = "0.7.2", features = ["cookie-session"] }
 
 [dependencies.uuid]
 version = "1.2.2"
