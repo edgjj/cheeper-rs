@@ -13,9 +13,10 @@ pub async fn get_user(
     username_or_id: &String,
     tag: UserSearchType,
 ) -> Result<User, actix_web::Error> {
+    
     let search_query = match tag {
-        ByName => format!("username:{}", username_or_id),
-        ById => format!("id:{}", username_or_id),
+        UserSearchType::ByName => format!("username:{}", username_or_id),
+        UserSearchType::ById => format!("id:{}", username_or_id),
     };
 
     match client

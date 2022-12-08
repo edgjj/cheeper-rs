@@ -1,6 +1,6 @@
 use actix_identity::Identity;
 use actix_web::{get, post, web, Error, HttpResponse, error};
-use opensearch::{IndexParts, UpdateParts, UpdateByQueryParts};
+use opensearch::UpdateByQueryParts;
 
 use serde::Deserialize;
 use serde_json::json;
@@ -34,6 +34,10 @@ async fn make_friends(
                 .id
         }
     };
+
+    if user.friend_list.contains(&friend_user_id){
+        return Ok(HttpResponse::Ok().body("Already has this friend"))
+    }
 
     user.friend_list.push(friend_user_id);
     
