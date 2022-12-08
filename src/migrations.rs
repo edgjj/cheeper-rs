@@ -1,6 +1,4 @@
-use opensearch::{
-    indices::IndicesCreateParts, indices::IndicesExistsParts, OpenSearch,
-};
+use opensearch::{indices::IndicesCreateParts, indices::IndicesExistsParts, OpenSearch};
 use serde_json::json;
 
 pub async fn create_indices(client: &OpenSearch) {
@@ -39,7 +37,7 @@ async fn make_index(client: &OpenSearch, name: &str, mapping: serde_json::Value)
         .await
         .unwrap();
 
-    if exists.status_code().is_success(){
+    if exists.status_code().is_success() {
         return;
     }
 

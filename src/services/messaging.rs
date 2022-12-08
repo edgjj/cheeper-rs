@@ -8,7 +8,7 @@ use uuid::Uuid;
 use serde_json::json;
 use serde_json::Value;
 
-use super::tools;
+use super::tools::*;
 use super::ServerState;
 
 use crate::dto::Message;
@@ -31,7 +31,7 @@ async fn index_messages(
     // check if id is valid and get actual id of not
     let user_id = match Uuid::try_parse(&username_or_id) {
         Ok(_) => username_or_id,
-        Err(_) => tools::get_user(client, &username_or_id)
+        Err(_) => get_user(client, &username_or_id, UserSearchType::ByName)
             .await?
             .id
             .to_string(),

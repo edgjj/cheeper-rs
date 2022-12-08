@@ -3,10 +3,24 @@ use actix_web::error;
 use opensearch::{OpenSearch, SearchParts};
 use serde_json::Value;
 
-pub async fn get_user(client: &OpenSearch, username: &String) -> Result<User, actix_web::Error> {
+pub enum UserSearchType {
+    ByName,
+    ById,
+}
+
+pub async fn get_user(
+    client: &OpenSearch,
+    username_or_id: &String,
+    tag: UserSearchType,
+) -> Result<User, actix_web::Error> {
+    let search_query = match tag {
+        ByName => format!("username:{}", username_or_id),
+        ById => format!("id:{}", username_or_id),
+    };
+
     match client
         .search(SearchParts::Index(&["users"]))
-        .q(format!("username:{}", username).as_str())
+        .q(search_query.as_str())
         .filter_path(&["hits.total.value", "hits.hits._source"])
         .send()
         .await

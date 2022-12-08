@@ -6,7 +6,7 @@ use opensearch::IndexParts;
 use serde::Deserialize;
 use serde_partial::SerializePartial;
 
-use super::tools;
+use super::tools::*;
 use super::ServerState;
 use crate::dto::User;
 
@@ -31,7 +31,7 @@ async fn register_user(
     let client = &state.client;
     let req = req.into_inner();
 
-    match tools::get_user(client, &req.username).await {
+    match get_user(client, &req.username, UserSearchType::ByName).await {
         Ok(_) => return HttpResponse::Ok().body("Already registered."),
         Err(e) if e.as_response_error().status_code() == StatusCode::NOT_FOUND => (),
         Err(_) => return HttpResponse::InternalServerError().finish(),
@@ -71,7 +71,7 @@ async fn login_user(
     plain_req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let client = &state.client;
-    let user = tools::get_user(client, &req.username).await?;
+    let user = get_user(client, &req.username, UserSearchType::ByName).await?;
 
     let parsed_hash = PasswordHash::new(&user.pw_hash).unwrap();
 
