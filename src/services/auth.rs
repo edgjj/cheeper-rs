@@ -108,8 +108,9 @@ async fn login_user(
     {
         return Err(error::ErrorUnauthorized("Invalid credentials."));
     }
+    
+    let login_identity = Identity::login(&plain_req.extensions(), user.id.to_string());
 
-    let login_identity = Identity::login(&plain_req.extensions(), req.into_inner().username);
     match login_identity {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")), //HttpResponse::from_error(error),
