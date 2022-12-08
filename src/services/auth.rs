@@ -2,16 +2,16 @@ use actix_identity::Identity;
 use actix_web::{
     error, http::StatusCode, post, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder,
 };
-use opensearch::{IndexParts, OpenSearch, SearchParts};
+use opensearch::IndexParts;
 use serde::Deserialize;
-use serde_json::Value;
 use serde_partial::SerializePartial;
 
+use super::tools;
 use super::ServerState;
 use crate::dto::User;
 
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordVerifier, SaltString},
     Argon2,
 };
 
@@ -24,31 +24,6 @@ struct LoginRegisterRequest {
     username: String,
     password: String,
 }
-async fn get_user(client: &OpenSearch, username: &String) -> Result<User, actix_web::Error> {
-    // Result<String, actix_web::HttpResponse>{
-
-    match client
-        .search(SearchParts::Index(&["users"]))
-        .q(format!("username:{}", username).as_str())
-        .send()
-        .await
-    {
-        Ok(response) => {
-            let mut search_result = response.json::<Value>().await.unwrap();
-
-            if search_result["hits"]["total"]["value"].as_i64().unwrap() == 0 {
-                Err(error::ErrorUnauthorized("")) // error
-            } else {
-                let user_json = search_result["hits"]["hits"][0]["_source"].take();
-                let user: User = serde_json::from_value(user_json).unwrap();
-
-                Ok(user)
-            }
-        }
-
-        Err(_) => Err(error::ErrorInternalServerError("")),
-    }
-}
 
 #[post("/register")]
 async fn register_user(
@@ -58,9 +33,9 @@ async fn register_user(
     let client = &state.client;
     let req = req.into_inner();
 
-    match get_user(client, &req.username).await {
+    match tools::get_user(client, &req.username).await {
         Ok(_) => return HttpResponse::Ok().body("Already registered."),
-        Err(e) if e.as_response_error().status_code() == StatusCode::UNAUTHORIZED => (),
+        Err(e) if e.as_response_error().status_code() == StatusCode::NOT_FOUND => (),
         Err(_) => return HttpResponse::InternalServerError().finish(),
     }
 
@@ -98,7 +73,7 @@ async fn login_user(
     plain_req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let client = &state.client;
-    let user = get_user(client, &req.username).await?;
+    let user = tools::get_user(client, &req.username).await?;
 
     let parsed_hash = PasswordHash::new(&user.pw_hash).unwrap();
 

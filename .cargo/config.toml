@@ -1,2 +1,3 @@
 [alias]
 runl = "run -- -e http://192.168.0.141:9200 -u admin -p admin"
+runrl = "run --release -- -e http://192.168.0.141:9200 -u admin -p admin"

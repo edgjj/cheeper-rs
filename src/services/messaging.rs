@@ -1,11 +1,14 @@
 use actix_identity::Identity;
-use actix_web::{get, post, web, HttpResponse, Responder};
-use opensearch::{IndexParts, OpenSearch, SearchParts};
-use serde_json::Value;
+use actix_web::{error, get, post, web, Error, HttpResponse, Responder};
+use opensearch::{IndexParts, SearchParts};
 
 use serde::Deserialize;
+use serde_json::json;
+use serde_json::Value;
 
+use super::tools;
 use super::ServerState;
+
 use crate::dto::Message;
 
 use log::debug;
@@ -16,19 +19,48 @@ struct MessagesDateSpan {
     date_end: Option<String>,
 }
 
-#[get("/messages/get/{user_id}")]
+#[get("/messages/get/{username}")]
 async fn index_messages(
     state: web::Data<ServerState>,
-    path: web::Path<u64>,
+    path: web::Path<String>,
     query: web::Query<MessagesDateSpan>,
-) -> impl Responder {
-    let user_id = path.into_inner();
+) -> Result<HttpResponse, Error> {
+    let client = &state.client;
+
+    let username = path.into_inner();
+    // find user by username - error if not found
+    let user = tools::get_user(client, &username).await?;
     let date_info = query.into_inner();
 
-    // do state.client interaction
+    match client
+        .search(SearchParts::Index(&["messages"]))
+        .q(format!("author_id:{}", user.id.to_string()).as_str())
+        .filter_path(&["hits.total.value", "hits.hits._source"]) //
+        .send()
+        .await
+    {
+        Ok(response) => {
+            let mut search_result: Value = response.json().await.unwrap();
+            let num_messages = search_result["hits"]["total"]["value"].as_i64().unwrap();
 
-    // custom responder
-    HttpResponse::Ok()
+            let mut messages_vec = json!([]);
+
+            // map results
+            if num_messages != 0 {
+                let hits = search_result["hits"]["hits"].as_array_mut().unwrap();
+                messages_vec = hits
+                    .iter_mut()
+                    .map(|v| v.as_object_mut().unwrap().remove("_source").unwrap())
+                    .collect();
+            }
+
+            Ok(HttpResponse::Ok().json(json!({
+                "count": num_messages,
+                "items": messages_vec
+            })))
+        }
+        Err(_) => Err(error::ErrorInternalServerError("")),
+    }
 }
 
 #[derive(Deserialize)]
