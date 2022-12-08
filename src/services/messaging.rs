@@ -63,16 +63,17 @@ async fn index_messages(
             let mut search_result: Value = response.json().await.unwrap();
             let num_messages = search_result["hits"]["total"]["value"].as_i64().unwrap();
 
-            let mut messages_vec = json!([]);
-
-            // map results
-            if num_messages != 0 {
+            let messages_vec = if num_messages == 0 {
+                json!([])     
+            } else {  
                 let hits = search_result["hits"]["hits"].as_array_mut().unwrap();
-                messages_vec = hits
+                let transformed: Vec<Value> = hits
                     .iter_mut()
                     .map(|v| v.as_object_mut().unwrap().remove("_source").unwrap())
                     .collect();
-            }
+
+                json!(transformed)
+            };
 
             Ok(HttpResponse::Ok().json(json!({
                 "count": num_messages,
@@ -107,10 +108,10 @@ async fn send_message(
         .await
     {
         Ok(response) => {
-            if !response.status_code().is_success() {
-                HttpResponse::InternalServerError().body("Failed to send message")
-            } else {
+            if response.status_code().is_success() {
                 HttpResponse::Ok().json(new_message)
+            } else {
+                HttpResponse::InternalServerError().body("Failed to send message")
             }
         }
         Err(_) => HttpResponse::ServiceUnavailable().finish(),

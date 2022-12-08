@@ -3,8 +3,6 @@ name = "es_cheaper"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 actix-web = "4"
 opensearch = "2.0.0"
@@ -18,12 +16,4 @@ serde-partial = "0.3.1"
 log = "0.4.17"
 chrono = "0.4.23"
 actix-session = { version = "0.7.2", features = ["cookie-session"] }
-
-[dependencies.uuid]
-version = "1.2.2"
-features = [
-    "v4",                # Lets you generate random UUIDs
-    "fast-rng",          # Use a faster (but still sufficiently random) RNG
-    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-    "serde"
-]
+uuid = {version = "1.2.2", features = ["v4", "fast-rng", "macro-diagnostics", "serde"]}

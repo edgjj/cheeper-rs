@@ -18,7 +18,6 @@ use argon2::{
 
 // we may share this between different requests as long as data is same
 #[derive(Deserialize)]
-
 struct LoginRegisterRequest {
     username: String,
     password: String,
@@ -54,11 +53,11 @@ async fn register_user(
         .await
     {
         Ok(response) => {
-            if !response.status_code().is_success() {
-                HttpResponse::Unauthorized().finish()
-            } else {
+            if response.status_code().is_success() {
                 let no_pw = new_user.without_fields(|u| [u.pw_hash]);
                 HttpResponse::Ok().json(no_pw)
+            } else {
+                HttpResponse::Unauthorized().finish()
             }
         }
         _ => HttpResponse::InternalServerError().finish(),
@@ -86,7 +85,7 @@ async fn login_user(
 
         match login_identity {
             Ok(_) => Ok(HttpResponse::Ok().finish()),
-            Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")), //HttpResponse::from_error(error),
+            Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")), 
         }
     }
 }

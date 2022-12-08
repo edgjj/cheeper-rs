@@ -96,11 +96,11 @@ async fn make_friends(
         .await
     {
         Ok(response) => {
-            if !response.status_code().is_success() {
-                Ok(HttpResponse::Unauthorized().finish())
-            } else {
+            if response.status_code().is_success() {
                 let no_pw = user.without_fields(|u| [u.pw_hash]);
                 Ok(HttpResponse::Ok().json(no_pw))
+            } else {
+                Ok(HttpResponse::Unauthorized().finish())
             }
         }
         _ => Err(error::ErrorInternalServerError("")),
