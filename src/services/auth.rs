@@ -71,7 +71,7 @@ async fn register_user(
         Ok(hash) => hash.to_string(),
     };
 
-    let new_user = User::new(req.username.clone(), pw_hash);
+    let new_user = User::new(req.username, pw_hash);
 
     match client
         .index(IndexParts::Index("users"))
@@ -83,8 +83,7 @@ async fn register_user(
             if !response.status_code().is_success() {
                 return HttpResponse::Unauthorized().finish();
             }
-            let status = response.status_code().to_string();
-            debug!("{} {}", response.text().await.unwrap(), status);
+
             let no_pw = new_user.without_fields(|u| [u.pw_hash]);
             HttpResponse::Ok().json(no_pw)
         }
@@ -99,13 +98,21 @@ async fn login_user(
     plain_req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let client = &state.client;
-
     let user = get_user(client, &req.username).await?;
+
+    let parsed_hash = PasswordHash::new(&user.pw_hash).unwrap();
+
+    if Argon2::default()
+        .verify_password(req.password.as_bytes(), &parsed_hash)
+        .is_err()
+    {
+        return Err(error::ErrorUnauthorized("Invalid credentials."));
+    }
 
     let login_identity = Identity::login(&plain_req.extensions(), req.into_inner().username);
     match login_identity {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(_error) => Ok(HttpResponse::InternalServerError().finish()), //HttpResponse::from_error(error),
+        Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")), //HttpResponse::from_error(error),
     }
 }
 
