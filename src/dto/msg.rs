@@ -11,10 +11,10 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn new(author_id: Uuid, text: String) -> Self {
+    pub fn new(author_id: String, text: String) -> Self {
         Message {
             id: Uuid::new_v4(),
-            author_id: author_id,
+            author_id: Uuid::parse_str(author_id.as_str()).unwrap(),
             text: text,
             created_at: Utc::now().to_rfc3339(),
         }

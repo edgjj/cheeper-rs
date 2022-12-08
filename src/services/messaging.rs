@@ -1,15 +1,19 @@
+use actix_identity::Identity;
 use actix_web::{get, post, web, HttpResponse, Responder};
-use std::time::SystemTime;
+use opensearch::{IndexParts, OpenSearch, SearchParts};
+use serde_json::Value;
 
 use serde::Deserialize;
 
 use super::ServerState;
 use crate::dto::Message;
 
+use log::debug;
+
 #[derive(Deserialize)]
 struct MessagesDateSpan {
-    date_start: Option<SystemTime>,
-    date_end: Option<SystemTime>,
+    date_start: Option<String>,
+    date_end: Option<String>,
 }
 
 #[get("/messages/get/{user_id}")]
@@ -36,9 +40,26 @@ struct SendMessageRequest {
 async fn send_message(
     state: web::Data<ServerState>,
     req: web::Json<SendMessageRequest>,
+    identity: Identity,
 ) -> impl Responder {
-    // do state.client interaction
+    let req = req.into_inner();
+    let client = &state.client;
 
-    // custom responder (return dto::Message as inserted in ES)
-    HttpResponse::Ok()
+    let new_message = Message::new(identity.id().unwrap(), req.text);
+
+    match client
+        .index(IndexParts::Index("messages"))
+        .body(&new_message)
+        .send()
+        .await
+    {
+        Ok(response) => {
+            if !response.status_code().is_success() {
+                HttpResponse::InternalServerError().body("Failed to send message")
+            } else {
+                HttpResponse::Ok().json(new_message)
+            }
+        }
+        Err(_) => HttpResponse::ServiceUnavailable().finish(),
+    }
 }

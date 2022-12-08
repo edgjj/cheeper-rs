@@ -37,13 +37,13 @@ async fn get_user(client: &OpenSearch, username: &String) -> Result<User, actix_
             let mut search_result = response.json::<Value>().await.unwrap();
 
             if search_result["hits"]["total"]["value"].as_i64().unwrap() == 0 {
-                return Err(error::ErrorUnauthorized("")); // error
+                Err(error::ErrorUnauthorized("")) // error
+            } else {
+                let user_json = search_result["hits"]["hits"][0]["_source"].take();
+                let user: User = serde_json::from_value(user_json).unwrap();
+
+                Ok(user)
             }
-
-            let user_json = search_result["hits"]["hits"][0]["_source"].take();
-            let user: User = serde_json::from_value(user_json).unwrap();
-
-            Ok(user)
         }
 
         Err(_) => Err(error::ErrorInternalServerError("")),
@@ -81,11 +81,11 @@ async fn register_user(
     {
         Ok(response) => {
             if !response.status_code().is_success() {
-                return HttpResponse::Unauthorized().finish();
+                HttpResponse::Unauthorized().finish()
+            } else {
+                let no_pw = new_user.without_fields(|u| [u.pw_hash]);
+                HttpResponse::Ok().json(no_pw)
             }
-
-            let no_pw = new_user.without_fields(|u| [u.pw_hash]);
-            HttpResponse::Ok().json(no_pw)
         }
         _ => HttpResponse::InternalServerError().finish(),
     }
@@ -106,14 +106,14 @@ async fn login_user(
         .verify_password(req.password.as_bytes(), &parsed_hash)
         .is_err()
     {
-        return Err(error::ErrorUnauthorized("Invalid credentials."));
-    }
-    
-    let login_identity = Identity::login(&plain_req.extensions(), user.id.to_string());
+        Err(error::ErrorUnauthorized("Invalid credentials."))
+    } else {
+        let login_identity = Identity::login(&plain_req.extensions(), user.id.to_string());
 
-    match login_identity {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")), //HttpResponse::from_error(error),
+        match login_identity {
+            Ok(_) => Ok(HttpResponse::Ok().finish()),
+            Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")), //HttpResponse::from_error(error),
+        }
     }
 }
 
