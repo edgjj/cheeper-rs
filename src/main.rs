@@ -1,4 +1,4 @@
-use actix_web::{cookie::Key, web, App, HttpServer, middleware::Logger};
+use actix_web::{cookie::Key, web, App, HttpServer};
 
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};

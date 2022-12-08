@@ -1,9 +1,6 @@
-use std::io::Read;
-
 use actix_identity::Identity;
-use actix_web::HttpRequest;
+
 use actix_web::{error, get, post, web, Error, HttpResponse, Responder};
-use log::debug;
 use opensearch::{IndexParts, SearchParts};
 
 use serde::Deserialize;
