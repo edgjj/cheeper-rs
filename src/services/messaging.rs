@@ -3,6 +3,8 @@ use actix_web::{error, get, post, web, Error, HttpResponse, Responder};
 use opensearch::{IndexParts, SearchParts};
 
 use serde::Deserialize;
+use uuid::Uuid;
+
 use serde_json::json;
 use serde_json::Value;
 
@@ -11,30 +13,35 @@ use super::ServerState;
 
 use crate::dto::Message;
 
-use log::debug;
-
 #[derive(Deserialize)]
 struct MessagesDateSpan {
     date_start: Option<String>,
     date_end: Option<String>,
 }
 
-#[get("/messages/{username}")]
+#[get("/messages/{username_or_id}")]
 async fn index_messages(
     state: web::Data<ServerState>,
     path: web::Path<String>,
     query: web::Query<MessagesDateSpan>,
 ) -> Result<HttpResponse, Error> {
     let client = &state.client;
+    let username_or_id = path.into_inner();
 
-    let username = path.into_inner();
-    // find user by username - error if not found
-    let user = tools::get_user(client, &username).await?;
+    // check if id is valid and get actual id of not
+    let user_id = match Uuid::try_parse(&username_or_id) {
+        Ok(_) => username_or_id,
+        Err(_) => tools::get_user(client, &username_or_id)
+            .await?
+            .id
+            .to_string(),
+    };
+
     let date_info = query.into_inner();
 
     match client
         .search(SearchParts::Index(&["messages"]))
-        .q(format!("author_id:{}", user.id.to_string()).as_str())
+        .q(format!("author_id:{}", user_id).as_str())
         .filter_path(&["hits.total.value", "hits.hits._source"]) //
         .send()
         .await

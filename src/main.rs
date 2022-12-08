@@ -43,6 +43,8 @@ async fn main() -> std::io::Result<()> {
             .service(auth::register_user)
             .service(auth::login_user)
             .service(auth::logout_user)
+            .service(users::get_user_info)
+            .service(users::make_friends)
             .service(messaging::index_messages)
             .service(messaging::send_message)
     })

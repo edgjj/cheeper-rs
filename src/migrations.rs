@@ -1,6 +1,5 @@
-use actix_web::http::StatusCode;
 use opensearch::{
-    indices::Indices, indices::IndicesCreateParts, indices::IndicesExistsParts, OpenSearch,
+    indices::IndicesCreateParts, indices::IndicesExistsParts, OpenSearch,
 };
 use serde_json::json;
 
@@ -39,6 +38,10 @@ async fn make_index(client: &OpenSearch, name: &str, mapping: serde_json::Value)
         .send()
         .await
         .unwrap();
+
+    if exists.status_code().is_success(){
+        return;
+    }
 
     indices
         .create(IndicesCreateParts::Index(name))

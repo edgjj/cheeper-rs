@@ -4,8 +4,6 @@ use opensearch::{OpenSearch, SearchParts};
 use serde_json::Value;
 
 pub async fn get_user(client: &OpenSearch, username: &String) -> Result<User, actix_web::Error> {
-    // Result<String, actix_web::HttpResponse>{
-
     match client
         .search(SearchParts::Index(&["users"]))
         .q(format!("username:{}", username).as_str())

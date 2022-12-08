@@ -15,8 +15,6 @@ use argon2::{
     Argon2,
 };
 
-use log::debug;
-
 // we may share this between different requests as long as data is same
 #[derive(Deserialize)]
 
