@@ -8,12 +8,12 @@ use opensearch::{
 };
 
 #[derive(Clone)]
-pub struct ServerState {
+pub struct State {
     pub client: OpenSearch,
 }
 
-impl ServerState {
-    pub fn new(url: String, username: String, password: String) -> ServerState {
+impl State {
+    pub fn new(url: String, username: String, password: String) -> State {
         // we do a ton of unwraps since this is initial stage of app
         let parsed_url = Url::parse(url.as_str()).unwrap();
 
@@ -25,6 +25,6 @@ impl ServerState {
 
         let client = OpenSearch::new(transport);
 
-        ServerState { client: client }
+        State { client: client }
     }
 }

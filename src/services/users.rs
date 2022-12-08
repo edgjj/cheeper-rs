@@ -1,14 +1,53 @@
 use actix_identity::Identity;
-use actix_web::{get, post, web, Error, HttpResponse, error};
-use opensearch::UpdateByQueryParts;
+use actix_web::{error, get, post, web, Error, HttpResponse};
+use opensearch::{OpenSearch, SearchParts, UpdateByQueryParts};
 
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{json, Value};
 use serde_partial::SerializePartial;
 use uuid::Uuid;
 
-use super::tools::*;
-use super::ServerState;
+use crate::dto::User;
+use crate::server::State;
+
+pub enum UserSearchType {
+    ByName,
+    ById,
+}
+
+pub async fn get_user(
+    client: &OpenSearch,
+    username_or_id: &String,
+    tag: UserSearchType,
+) -> Result<User, actix_web::Error> {
+    let search_query = match tag {
+        UserSearchType::ByName => format!("username:{}", username_or_id),
+        UserSearchType::ById => format!("id:{}", username_or_id),
+    };
+
+    match client
+        .search(SearchParts::Index(&["users"]))
+        .q(search_query.as_str())
+        .filter_path(&["hits.total.value", "hits.hits._source"])
+        .send()
+        .await
+    {
+        Ok(response) => {
+            let mut search_result = response.json::<Value>().await.unwrap();
+
+            if search_result["hits"]["total"]["value"].as_i64().unwrap() == 0 {
+                Err(error::ErrorNotFound("User not found")) // error
+            } else {
+                let user_json = search_result["hits"]["hits"][0]["_source"].take();
+                let user: User = serde_json::from_value(user_json).unwrap();
+
+                Ok(user)
+            }
+        }
+
+        Err(_) => Err(error::ErrorInternalServerError("")),
+    }
+}
 
 #[derive(Deserialize)]
 struct MakeFriendsRequest {
@@ -17,7 +56,7 @@ struct MakeFriendsRequest {
 
 #[post("/users/friend")]
 async fn make_friends(
-    state: web::Data<ServerState>,
+    state: web::Data<State>,
     req: web::Json<MakeFriendsRequest>,
     identity: Identity,
 ) -> Result<HttpResponse, Error> {
@@ -35,12 +74,12 @@ async fn make_friends(
         }
     };
 
-    if user.friend_list.contains(&friend_user_id){
-        return Ok(HttpResponse::Ok().body("Already has this friend"))
+    if user.friend_list.contains(&friend_user_id) {
+        return Ok(HttpResponse::Ok().body("Already has this friend"));
     }
 
     user.friend_list.push(friend_user_id);
-    
+
     match client
         .update_by_query(UpdateByQueryParts::Index(&["users"]))
         .q(format!("id:{}", user_id).as_str())
@@ -70,7 +109,7 @@ async fn make_friends(
 
 #[get("/users/{username}")]
 async fn get_user_info(
-    state: web::Data<ServerState>,
+    state: web::Data<State>,
     path: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
     let client = &state.client;

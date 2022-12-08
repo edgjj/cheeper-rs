@@ -6,8 +6,9 @@ use opensearch::IndexParts;
 use serde::Deserialize;
 use serde_partial::SerializePartial;
 
-use super::tools::*;
-use super::ServerState;
+use super::users::{get_user, UserSearchType};
+use crate::server::State;
+
 use crate::dto::User;
 
 use argon2::{
@@ -25,7 +26,7 @@ struct LoginRegisterRequest {
 
 #[post("/register")]
 async fn register_user(
-    state: web::Data<ServerState>,
+    state: web::Data<State>,
     req: web::Json<LoginRegisterRequest>,
 ) -> impl Responder {
     let client = &state.client;
@@ -66,7 +67,7 @@ async fn register_user(
 
 #[post("/login")] // web::Json<LoginRegisterRequest>
 async fn login_user(
-    state: web::Data<ServerState>,
+    state: web::Data<State>,
     req: web::Json<LoginRegisterRequest>,
     plain_req: HttpRequest,
 ) -> Result<HttpResponse, Error> {

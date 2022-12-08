@@ -4,7 +4,7 @@ use actix_identity::IdentityMiddleware;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 
 use clap::Parser;
-use es_cheaper::{migrations, services::*};
+use es_cheaper::{migrations, server, services::*};
 
 #[derive(Parser)]
 struct Args {
@@ -23,7 +23,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let args = Args::parse();
-    let server_state = ServerState::new(args.engine_url, args.username, args.password);
+    let server_state = server::State::new(args.engine_url, args.username, args.password);
 
     // create indices
     migrations::create_indices(&server_state.client).await;

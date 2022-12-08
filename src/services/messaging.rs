@@ -8,10 +8,10 @@ use uuid::Uuid;
 use serde_json::json;
 use serde_json::Value;
 
-use super::tools::*;
-use super::ServerState;
+use super::users::{get_user, UserSearchType};
 
 use crate::dto::Message;
+use crate::server::State;
 
 #[derive(Deserialize)]
 struct MessagesDateSpan {
@@ -21,7 +21,7 @@ struct MessagesDateSpan {
 
 #[get("/messages/{username_or_id}")]
 async fn index_messages(
-    state: web::Data<ServerState>,
+    state: web::Data<State>,
     path: web::Path<String>,
     query: web::Query<MessagesDateSpan>,
 ) -> Result<HttpResponse, Error> {
@@ -77,7 +77,7 @@ struct SendMessageRequest {
 
 #[post("/messages/send")]
 async fn send_message(
-    state: web::Data<ServerState>,
+    state: web::Data<State>,
     req: web::Json<SendMessageRequest>,
     identity: Identity,
 ) -> impl Responder {
