@@ -19,7 +19,7 @@ struct MessagesDateSpan {
     date_end: Option<String>,
 }
 
-#[get("/messages/get/{username}")]
+#[get("/messages/{username}")]
 async fn index_messages(
     state: web::Data<ServerState>,
     path: web::Path<String>,
