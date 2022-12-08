@@ -1,4 +1,4 @@
-use actix_web::{cookie::Key, web, App, HttpServer};
+use actix_web::{cookie::Key, web, App, HttpServer, middleware::Logger};
 
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
@@ -20,6 +20,7 @@ struct Args {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    //std::env::set_var("RUST_LOG", "info");
     env_logger::init();
 
     let args = Args::parse();

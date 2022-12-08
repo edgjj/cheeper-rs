@@ -1,5 +1,9 @@
+use std::io::Read;
+
 use actix_identity::Identity;
+use actix_web::HttpRequest;
 use actix_web::{error, get, post, web, Error, HttpResponse, Responder};
+use log::debug;
 use opensearch::{IndexParts, SearchParts};
 
 use serde::Deserialize;
@@ -10,8 +14,8 @@ use serde_json::Value;
 
 use super::users::{get_user, UserSearchType};
 
-use crate::dto::Message;
 use crate::server::State;
+use crate::dto::Message;
 
 #[derive(Deserialize)]
 struct MessagesDateSpan {
@@ -23,7 +27,7 @@ struct MessagesDateSpan {
 async fn index_messages(
     state: web::Data<State>,
     path: web::Path<String>,
-    query: web::Query<MessagesDateSpan>,
+    query: Option<web::Json<MessagesDateSpan>> // optional JSON with optional values
 ) -> Result<HttpResponse, Error> {
     let client = &state.client;
     let username_or_id = path.into_inner();
@@ -37,11 +41,23 @@ async fn index_messages(
             .to_string(),
     };
 
-    let date_info = query.into_inner();
+    //let date_info = query.into_inner();
+    let mut date_query = "".to_owned();
+
+    if let Some(date_info) = query{
+        let date_info = date_info.into_inner();
+        
+        date_query = match (date_info.date_start, date_info.date_end){
+            (Some(start), None) => format!("AND created_at:[{start} TO now]"),
+            (None, Some(end)) => format!("AND created_at:[* TO {end}]"),
+            (Some(start), Some(end)) => format!("AND created_at:[{start} TO {end}]"),
+            _ => date_query
+        };
+    }
 
     match client
         .search(SearchParts::Index(&["messages"]))
-        .q(format!("author_id:{}", user_id).as_str())
+        .q(format!("author_id:{user_id} {date_query}").as_str())
         .filter_path(&["hits.total.value", "hits.hits._source"]) //
         .send()
         .await
@@ -81,6 +97,7 @@ async fn send_message(
     req: web::Json<SendMessageRequest>,
     identity: Identity,
 ) -> impl Responder {
+
     let req = req.into_inner();
     let client = &state.client;
 
