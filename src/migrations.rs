@@ -7,9 +7,9 @@ pub async fn create_indices(client: &OpenSearch) {
         "users",
         json!({
             "id": { "type" : "text" },
-            "author_id": { "type": "text" },
+            "username": { "type": "text" },
             "created_at": { "type": "date" },
-            "text": { "type": "text" },
+            "friend_list": { "type": "text" },
             "pw_hash": { "type": "text" },
         }),
     )
@@ -20,9 +20,9 @@ pub async fn create_indices(client: &OpenSearch) {
         "messages",
         json!({
             "id": { "type" : "text" },
-            "username": { "type": "text" },
+            "author_id": { "type": "text" },
             "created_at": { "type": "date" },
-            "friend_list": { "type": "text" },
+            "text": { "type": "text" },
         }),
     )
     .await;

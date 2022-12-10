@@ -7,12 +7,13 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use serde_json::json;
-use serde_json::Value;
 
 use super::users::{get_user, UserSearchType};
 
-use crate::server::State;
 use crate::dto::Message;
+use crate::server::State;
+
+use super::response_utils;
 
 #[derive(Deserialize)]
 struct MessagesDateSpan {
@@ -24,7 +25,7 @@ struct MessagesDateSpan {
 async fn index_messages(
     state: web::Data<State>,
     path: web::Path<String>,
-    query: Option<web::Json<MessagesDateSpan>> // optional JSON with optional values
+    query: Option<web::Json<MessagesDateSpan>>, // optional JSON with optional values
 ) -> Result<HttpResponse, Error> {
     let client = &state.client;
     let username_or_id = path.into_inner();
@@ -38,17 +39,16 @@ async fn index_messages(
             .to_string(),
     };
 
-    //let date_info = query.into_inner();
     let mut date_query = "".to_owned();
 
-    if let Some(date_info) = query{
+    if let Some(date_info) = query {
         let date_info = date_info.into_inner();
-        
-        date_query = match (date_info.date_start, date_info.date_end){
+
+        date_query = match (date_info.date_start, date_info.date_end) {
             (Some(start), None) => format!("AND created_at:[{start} TO now]"),
             (None, Some(end)) => format!("AND created_at:[* TO {end}]"),
             (Some(start), Some(end)) => format!("AND created_at:[{start} TO {end}]"),
-            _ => date_query
+            _ => date_query,
         };
     }
 
@@ -60,24 +60,11 @@ async fn index_messages(
         .await
     {
         Ok(response) => {
-            let mut search_result: Value = response.json().await.unwrap();
-            let num_messages = search_result["hits"]["total"]["value"].as_i64().unwrap();
-
-            let messages_vec = if num_messages == 0 {
-                json!([])     
-            } else {  
-                let hits = search_result["hits"]["hits"].as_array_mut().unwrap();
-                let transformed: Vec<Value> = hits
-                    .iter_mut()
-                    .map(|v| v.as_object_mut().unwrap().remove("_source").unwrap())
-                    .collect();
-
-                json!(transformed)
-            };
+            let parsed = response_utils::parse_message_search(response).await?;
 
             Ok(HttpResponse::Ok().json(json!({
-                "count": num_messages,
-                "items": messages_vec
+                "count": parsed.len(),
+                "items": parsed
             })))
         }
         Err(_) => Err(error::ErrorInternalServerError("")),
@@ -95,7 +82,6 @@ async fn send_message(
     req: web::Json<SendMessageRequest>,
     identity: Identity,
 ) -> impl Responder {
-
     let req = req.into_inner();
     let client = &state.client;
 

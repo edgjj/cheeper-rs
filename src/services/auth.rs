@@ -85,7 +85,7 @@ async fn login_user(
 
         match login_identity {
             Ok(_) => Ok(HttpResponse::Ok().finish()),
-            Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")), 
+            Err(_error) => Err(error::ErrorInternalServerError("Failed to make identity")),
         }
     }
 }

@@ -4,7 +4,10 @@ use actix_identity::IdentityMiddleware;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 
 use clap::Parser;
-use es_cheaper::{migrations, server, services::{auth, messaging, users}};
+use es_cheeper::{
+    migrations, server,
+    services::{auth, messaging, users},
+};
 
 #[derive(Parser)]
 struct Args {

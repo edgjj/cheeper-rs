@@ -3,12 +3,14 @@ use actix_web::{error, get, post, web, Error, HttpResponse};
 use opensearch::{OpenSearch, SearchParts, UpdateByQueryParts};
 
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::json;
 use serde_partial::SerializePartial;
 use uuid::Uuid;
 
 use crate::dto::User;
 use crate::server::State;
+
+use super::response_utils;
 
 pub enum UserSearchType {
     ByName,
@@ -32,18 +34,7 @@ pub async fn get_user(
         .send()
         .await
     {
-        Ok(response) => {
-            let mut search_result = response.json::<Value>().await.unwrap();
-
-            if search_result["hits"]["total"]["value"].as_i64().unwrap() == 0 {
-                Err(error::ErrorNotFound("User not found")) // error
-            } else {
-                let user_json = search_result["hits"]["hits"][0]["_source"].take();
-                let user: User = serde_json::from_value(user_json).unwrap();
-
-                Ok(user)
-            }
-        }
+        Ok(response) => response_utils::parse_user_search(response).await,
 
         Err(_) => Err(error::ErrorInternalServerError("")),
     }
